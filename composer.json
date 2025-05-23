@@ -1,0 +1,19 @@
+{
+    "name": "fredy/scrapping-inmobaperu",
+    "description": "scrapint de inmobaperu",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "codigoinerte",
+            "email": "fmartinez.bpe@gmail.com"
+        }
+    ],
+    "require": {
+        "symfony/browser-kit": "^7.2",
+        "symfony/dom-crawler": "^7.2",
+        "symfony/http-client": "^7.2",
+        "guzzlehttp/guzzle": "^7.0",
+        "symfony/css-selector": "^7.2"
+    }
+}
