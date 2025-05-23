@@ -146,67 +146,278 @@
     |_)(_||_)||(_)| )|(_|,   |_| )(-  | )|_||_)  | (_)|   | )(_)|||(-_)
     \n\n\n\n");
 
+    ### script para obtener datos de un aviso
 
-    ##### LOGICA PARA EXTRAER DATOS
+    function cleanPropertyType ($property_type = null) {
 
-    ## DEPARAMENTOS
-    $browser = $client->request('GET', $path . "/departamentos/");
-    $script = $browser->filter('script#stm-search-form-advanced-js-before')->text();
-    print_r($script);
-    ##### LOGICA PARA EXTRAER DATOS
+        $property_type =  strval($property_type);
+        $property_type = strtolower($property_type);
+
+        if (
+            str_contains(strtolower($property_type), "casa")
+            OR strpos(strtolower($property_type), "casas") !== false
+        ) {
+            $property_type = "house";
+        }
+        else if (
+            str_contains(strtolower($property_type), "local comercial")
+            OR str_contains(strtolower($property_type), "local industrial")
+        ) {
+            $property_type = "commercial";
+        }
+        else if (
+            str_contains(strtolower($property_type), "dpto")
+            OR str_contains(strtolower($property_type), "dpto.")
+            OR str_contains(strtolower($property_type), "dpto,")
+            OR str_contains(strtolower($property_type), "dptos")
+            OR str_contains(strtolower($property_type), "dptos.")
+            OR str_contains(strtolower($property_type), "dptos,")
+            OR str_contains(strtolower($property_type), "loft")
+            OR str_contains(strtolower($property_type), "dúplex")
+            OR str_contains(strtolower($property_type), "duplex")
+            OR str_contains(strtolower($property_type), "duplex,")
+            OR str_contains(strtolower($property_type), "d\u00faplex")
+            OR str_contains(strtolower($property_type), "d\u00faplex,")
+            OR str_contains(strtolower($property_type), "departamento")
+            OR str_contains(strtolower($property_type), "departamentos")
+            OR str_contains(strtolower($property_type), "flat")
+        ) {
+            $property_type = "apartment";
+        }
+        else if (
+            str_contains(strtolower($property_type), "oficina")
+            OR str_contains(strtolower($property_type), "of.")
+            OR str_contains(strtolower($property_type), "oficina,")
+            OR str_contains(strtolower($property_type), "oficinas")
+        ) {
+            $property_type = "office";
+        }
+        else if (
+            str_contains(strtolower($property_type), "terreno")
+            OR str_contains(strtolower($property_type), "terreno,")
+            OR str_contains(strtolower($property_type), "parcelas")
+        ) {
+            $property_type = "land";
+        }
+        else if (
+            str_contains(strtolower($property_type), "cochera")
+        ) {
+            $property_type = "parking";
+        }
+        else if (
+            str_contains(strtolower($property_type), "edificio")
+        ) {
+            $property_type = "building";
+        }
+        else {
+            unset($property_type);
+        }
+        return $property_type;
+    }
+
+    $listing = $client->request('GET', $path . "/listing/precioso-departamento-en-batallones-libres-de-trujillo-santiago-de-surco");
+    $body = $listing->filter("body");
+    $title = $body
+            ->filter(".attribute-title-box")
+            ->text();
+
+    $array_images = array();
+    $body
+    ->filter(".listing-gallery-thumbnail-box")
+    ->filter("a")
+    ->each(function($node) use(&$array_images) {                        
+        array_push($array_images, $node->attr("href"));                
+    });
+
+    $listing_type = $body
+            ->filter(".listing-single-info")
+            ->filter(".listing-category-list")
+            ->filter("span")
+            ->text();
+
+    switch (strtolower($listing_type)) {
+        case 'alquiler':
+            $listing_type = "rent";
+        break;
+
+        case 'venta':
+            $listing_type = "sale";
+        break;
+    }
+
+    $property_type = cleanPropertyType($body
+                    ->filter(".listing-single-info")
+                    ->filter(".listing-type-list")
+                    ->filter("span")
+                    ->text());
+
+    $description = $body
+                ->filter(".site-content")
+                ->filter("div:nth-child(4)")
+                ->filter(".container")
+                ->filter(".stm-row")
+                ->filter(".stm-col:nth-child(1)")
+                ->filter("div:nth-child(1)")
+                ->html();
+    $description = str_replace("<br>", "", $description);
+
+    if (str_contains($description, " https://youtu")) {
+        $video_url = get_string_between($description, 'https://youtu', '<');
+        $video_url = strval("https://youtu" . $video_url);
+
+        array_push($array_videos, $video_url);
+    }
+
+    if (
+        $body
+            ->filter(".site-content")
+            ->filter(".genuine_sale")
+            ->count() > 0
+    ) {
+        $price = $body
+            ->filter(".site-content")
+            ->filter(".genuine_sale")
+            ->text();
+
+        $price = str_replace(array(",", ".","$"), array("", "", ""), $price);
+    }
+
+
+    $id_listing_external = $body
+                            ->filter("body")
+                            ->filter("span.ulisting-listing-wishlist")
+                            ->attr("data-wishlist_id");
+
+    $bedrooms_count = null;
+    $bathrooms_count = null;
+    $area = null;
+    $built_area = null;
+    $parking_slots_count = null;
+    $year_of_construction = null;
+
+    $attr1 = $body
+                ->filter(".attribute-box")
+                ->filter(".attribute-box-columns:nth-child(1)");    
+    
+    $attr2 = $body
+                ->filter(".attribute-box")
+                ->filter(".attribute-box-columns:nth-child(2)");
+
+    $attr3 = $body
+                ->filter(".attribute-box")
+                ->filter(".attribute-box-columns:nth-child(3)");
+
+    $attr4 = $body
+                ->filter(".attribute-box")
+                ->filter(".attribute-box-columns:nth-child(4)");
+
+    foreach([$attr1, $attr2, $attr3, $attr4] as $node){
+        $name = strtolower($node->filter(".attribute-name")->text());
+        $value = $node->filter(".attribute-value")->text();
+        
+        switch ($name) {
+            case 'dormitorios':
+                $bedrooms_count = $value;
+            break;
+
+            case 'baños':
+                $bathrooms_count = $value;
+            break;
+
+            case 'mt2':
+                $area = $value;
+            break;
+
+            case 'cochera':
+                $parking_slots_count = $value;
+            break;
+        }
+    }
+
+    $year_of_construction = $body
+                ->filter(".site-content")
+                ->filter("div:nth-child(4)")
+                ->filter(".container")
+                ->filter(".stm-row")
+                ->filter(".stm-col:nth-child(1)")
+                ->filter(".attribute-box")
+                ->filter(".attribute-value")
+                ->text();
+    $year_of_construction = !empty($year_of_construction) && $year_of_construction != "N/A" ? $year_of_construction : null;
+
+    print_r($year_of_construction);    
 
     exit();
+    ##### LOGICA PARA EXTRAER DATOS
+    $browser = $client->request('GET', $path . "/departamentos/");
+    $script = $browser->filter('script#stm-search-form-advanced-js-before')->text();
+    $response = str_replace("/* <![CDATA[ */ var stm_listing_pagination_data = json_parse('", "", $script);
+    $response = str_replace("') /* ]]> */", "", $response);
+    $response = str_replace("\\\"", "\"", $response); 
+    $response = json_decode($response, true);
+    $total_pages = $response["total_pages"] ?? 1;
+    ##### LOGICA PARA EXTRAER DATOS
+
     ##########################################################################################
     #GETTING PROVIDER DATA
     ##########################################################################################
-    for ($page = 1; $page <= 30; $page++) {
+    for ($page = 1; $page <= $total_pages; $page++) {
         if ($page == 1) {
-            $listing = $client->request('GET', $path . "/listings/browse/?keyword=&offer=&location=&listing-type=&bedrooms=&bathrooms=&min=&max=&orderby=date&order=desc");
+            $listing = $client->request('GET', $path . "/departamentos/");
         }
         else {
-            $listing = $client->request('GET', $path . "/listings/browse/page/" . $page . "/?keyword&offer&location&listing-type&bedrooms&bathrooms&min&max&orderby=date&order=desc#038;offer&location&listing-type&bedrooms&bathrooms&min&max&orderby=date&order=desc");
+            $listing = $client->request('GET', $path . "/departamentos/?range[price]=0;1560000&range[square_feet]=0;6232&current_page=" . $page );
         }
-
+        
         if (
             $listing
-                ->filter("body")
-                ->filter("div.site-wrapper")
-                ->filter("div.site-container")
-                ->filter("div.site-main")
-                ->filter("div.container")
-                ->filter("div.row.gutter-60")
-                ->filter("main.content.col-md-12")
-                ->filter("article")
-                ->filter("div.entry-content")
-                ->filter("div.wpsight-listings-sc")
-                ->text() == "Lo sentimos, no hay resultados para su búsqueda."
+                ->filter(".ulisting-item-grid")
+                ->count() == 0
         ) {
             continue;
         }
         else {
+            $context = stream_context_create(
+                            [
+                                'http' => array(
+                                    'method' => 'GET',
+                                    'header' => "Accept-language: en\nCookie: foo=bar",
+                                )
+                            ]
+                        );
             $listing
                 ->filter("body")
-                ->filter("div.site-wrapper")
-                ->filter("div.site-container")
-                ->filter("div.site-main")
-                ->filter("div.container")
-                ->filter("div.row.gutter-60")
-                ->filter("main.content.col-md-12")
-                ->filter("article")
-                ->filter("div.entry-content")
-                ->filter("div.wpsight-listings-sc")
-                ->filter("div.wpsight-listings")
-                ->filter("div.row.gutter-60")
-                ->filter("div.listing-wrap.col-sm-4")
-                ->filter("a")
-                ->each(function($node) use(&$array_provider) {
+                ->filter(".ulisting-item-grid")
+                ->filter(".inventory-thumbnail-box")
+                ->each(function($node) use(&$array_provider, $path){
+
                     if ($node->attr('href') <> "javascript:void(0)") {
-                        $link = $node->attr('href');
+                        $link = $node->filter("a");
+                        $link = $link->attr('href');
+                        $id = $node->attr('data-id');
+                        
+                        try {                                                        
+                            $url =  $path . "/wp-json/wp/v2/listing/" . $id;
+                            $curl = curl_init();
+                            curl_setopt($curl, CURLOPT_URL, $url);
+                            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                            curl_setopt($curl, CURLOPT_HEADER, false);
+                            $response = curl_exec($curl);
+                            curl_close($curl);
 
-                        $file_headers = @get_headers($link);
+                            $data = json_decode($response, true);
 
-                        if($file_headers AND strpos($file_headers[0], '200')) {
-                            array_push($array_provider, strval($link));
+                            if(!isset($data["data"]["status"]) || $data["data"]["status"]!=404){
+                                $_status = strval($data["status"] ?? 'unpublish');
+                                
+                                if($_status == 'publish'){
+                                    array_push($array_provider, strval($link));
+                                }
+                            }
+
+                            unset($_status);
+                        } catch (Exception $e) {
+                            print_r($e->getMessage());
                         }
                     }
                 });
@@ -682,7 +893,7 @@
                                 $year_of_construction = str_replace($old_string, $new_string, $year_of_construction_prev[0]);
                             }
                         });
-
+                        //! TODO REVISAR DESDE ESTE PUNTO EL AREA
                     if (!isset($area)) {
                         $listing
                             ->filter("body")
@@ -733,6 +944,7 @@
                         $built_area = get_string_between($built_area_prev, 'A.C. : ', ' m2');
                     }
 
+                    //!TODO REVISAR DIRECCIÓN
                     if (
                         $listing
                         ->filter("body")
