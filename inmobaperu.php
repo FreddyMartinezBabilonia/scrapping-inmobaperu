@@ -155,7 +155,23 @@
     $inmueble = new Inmueble($url);
     print_r($inmueble->getPrice());
     exit();
-    ##### LOGICA PARA EXTRAER DATOS
+    ##########################################################################################
+    #GETTING BABILONIA DATA
+    ##########################################################################################
+    $select_listings_babilonia = $listings->find(
+        array('$and' => array(
+            array('user_id' => intval($user_id)),
+            array('external_data.id' => array('$ne' => null)),
+            array('source' => strval('integration')),
+        ))
+    );
+    foreach ($select_listings_babilonia as $babilonia) {
+        array_push($array_babilonia, strtolower($babilonia["external_data"]["url"]));
+    }
+    
+    ##########################################################################################
+    #EXTRAER PAGINA MAX POR VISTA DE PROPIEDAD VISITADA
+    ##########################################################################################
     $browser = $client->request('GET', $path . "/departamentos/");
     $script = $browser->filter('script#stm-search-form-advanced-js-before')->text();
     $response = str_replace("/* <![CDATA[ */ var stm_listing_pagination_data = json_parse('", "", $script);
@@ -163,8 +179,7 @@
     $response = str_replace("\\\"", "\"", $response); 
     $response = json_decode($response, true);
     $total_pages = $response["total_pages"] ?? 1;
-    ##### LOGICA PARA EXTRAER DATOS
-
+    
     ##########################################################################################
     #GETTING PROVIDER DATA
     ##########################################################################################
@@ -184,7 +199,7 @@
             continue;
         }
         else {
-            
+
             $listing
                 ->filter("body")
                 ->filter(".ulisting-item-grid")
@@ -227,20 +242,6 @@
     $array_provider = array_unique($array_provider);
 
     if (count($array_provider) >= 1) {
-        ##########################################################################################
-        #GETTING BABILONIA DATA
-        ##########################################################################################
-        $select_listings_babilonia = $listings->find(
-            array('$and' => array(
-                array('user_id' => intval($user_id)),
-                array('external_data.id' => array('$ne' => null)),
-                array('source' => strval('integration')),
-            ))
-        );
-
-        foreach ($select_listings_babilonia as $babilonia) {
-            array_push($array_babilonia, strtolower($babilonia["external_data"]["url"]));
-        }
 
         ##########################################################################################
         #DELETING ADS
