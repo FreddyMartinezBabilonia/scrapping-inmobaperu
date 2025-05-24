@@ -184,14 +184,7 @@
             continue;
         }
         else {
-            $context = stream_context_create(
-                            [
-                                'http' => array(
-                                    'method' => 'GET',
-                                    'header' => "Accept-language: en\nCookie: foo=bar",
-                                )
-                            ]
-                        );
+            
             $listing
                 ->filter("body")
                 ->filter(".ulisting-item-grid")
