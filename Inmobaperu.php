@@ -4,7 +4,7 @@
     use Symfony\Component\DomCrawler\Crawler;
     use Symfony\Component\HttpClient\HttpClient;
 
-    include_once __DIR__ . "/Inmueble.php";
+    include_once __DIR__ . "/InmobaperuInmueble.php";
     
     date_default_timezone_set('America/Lima');
 
@@ -152,7 +152,7 @@
 
     $url = $path . "/listing/precioso-departamento-en-batallones-libres-de-trujillo-santiago-de-surco";
 
-    $inmueble = new Inmueble($url);
+    $inmueble = new InmobaperuInmueble($url);
     print_r($inmueble->getPrice());
     exit();
     ##########################################################################################
@@ -386,7 +386,7 @@
                 foreach ($result_create as $link) {
                     echo $link . "\n";
 
-                    $inmueble = new Inmueble($link);
+                    $inmueble = new InmobaperuInmueble($link);
                     $entire_website = $inmueble->getEntireWebsite();
 
                     file_put_contents($path_data_website, $link . " - " . date("Y-m-d\TH:i:s\Z") . "\n" . $entire_website . "\n\n\n", FILE_APPEND | LOCK_EX);
@@ -555,7 +555,7 @@
                 foreach ($result_update as $link) {
                     echo $link . "\n";
 
-                    $inmueble = new Inmueble($link);
+                    $inmueble = new InmobaperuInmueble($link);
                     $entire_website = $inmueble->getEntireWebsite();
 
                     file_put_contents($path_data_website, $link . " - " . date("Y-m-d\TH:i:s\Z") . "\n" . $entire_website . "\n\n\n", FILE_APPEND | LOCK_EX);                    
