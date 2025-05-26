@@ -207,8 +207,8 @@
                     curl_close($curl);
         
                     $data = json_decode($response, true);
-        
-                    if(!isset($data["data"]["status"]) || $data["data"]["status"]!=404){
+                    $slug = str_replace($path . "/listing/", "", $link);
+                    if((!isset($data["data"]["status"]) || $data["data"]["status"]!=404) && $slug !=""){
                         $_status = strval($data["status"] ?? 'unpublish');
                         
                         if($_status == 'publish'){
