@@ -150,10 +150,96 @@
 
     ### script para obtener datos de un aviso
 
-    $url = $path . "/listing/precioso-departamento-en-batallones-libres-de-trujillo-santiago-de-surco";
+    $views = array("departamentos", "casas-2", "oficinas", "local-comercial", "terrenos");
 
-    $inmueble = new InmobaperuInmueble($url);
-    print_r($inmueble->getPrice());
+    foreach($views as $view){
+        
+        ##########################################################################################
+        #EXTRAER PAGINA MAX POR VISTA DE PROPIEDAD VISITADA
+        ##########################################################################################
+        $browser = $client->request('GET', $path . "/$view/");
+        $script = $browser->filter('script#stm-search-form-advanced-js-before')->text();
+        $response = str_replace("/* <![CDATA[ */ var stm_listing_pagination_data = json_parse('", "", $script);
+        $response = str_replace("') /* ]]> */", "", $response);
+        $response = str_replace("\\\"", "\"", $response); 
+        $response = json_decode($response, true);
+        $total_pages = $response["total_pages"] ?? 1;
+        
+        ##########################################################################################
+        #GETTING PROVIDER DATA
+        ##########################################################################################
+        for ($page = 1; $page <= $total_pages; $page++) {
+            if ($page == 1) {
+                $listing = $client->request('GET', $path . "/$view/");
+            }
+            else {
+                $listing = $client->request('GET', $path . "/$view/?current_page=" . $page );
+            }
+            
+            if (
+                $listing
+                    ->filter(".ulisting-item-grid")
+                    ->count() == 0
+            ) {
+                unset($listing);
+                continue;
+            }
+            else {
+        
+            $listing
+                ->filter("body")
+                ->filter(".ulisting-item-grid")
+                ->filter(".inventory-thumbnail-box")
+                ->each(function($node) use(&$array_provider, $path){
+        
+                if ($node->attr('href') <> "javascript:void(0)") {
+                    $link = $node->filter("a");
+                    $link = $link->attr('href');
+                    $id = $node->attr('data-id');
+                    
+                    try {                                                        
+                    $url =  $path . "/wp-json/wp/v2/listing/" . $id;
+                    $curl = curl_init();
+                    curl_setopt($curl, CURLOPT_URL, $url);
+                    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($curl, CURLOPT_HEADER, false);
+                    $response = curl_exec($curl);
+                    curl_close($curl);
+        
+                    $data = json_decode($response, true);
+        
+                    if(!isset($data["data"]["status"]) || $data["data"]["status"]!=404){
+                        $_status = strval($data["status"] ?? 'unpublish');
+                        
+                        if($_status == 'publish'){
+                            array_push($array_provider, strval($link));
+                        }
+                    }
+        
+                        unset($_status);
+                        unset($url);
+                        unset($curl);
+                        unset($response);
+                        unset($data);
+                    } catch (Exception $e) {
+                        print_r($e->getMessage());
+                    }
+                    unset($link);
+                    unset($id);
+                }
+                });
+                unset($listing);
+            }
+        }
+
+        unset($browser);
+        unset($script);
+        unset($response);
+        unset($total_pages);
+    }
+    
+    $array_provider = array_unique($array_provider);
+    print_r($array_provider);
     exit();
     ##########################################################################################
     #GETTING BABILONIA DATA
@@ -256,7 +342,7 @@
         unset($response);
         unset($total_pages);
     }
-    
+
     $array_provider = array_unique($array_provider);
 
     if (count($array_provider) >= 1) {
