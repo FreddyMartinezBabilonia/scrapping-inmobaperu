@@ -484,7 +484,9 @@ Class InmobaperuInmueble {
             $property_type = "building";
         }
         else {
-            unset($property_type);
+            $property_type = null;
         }
+
+        return $property_type;
     }
 }
