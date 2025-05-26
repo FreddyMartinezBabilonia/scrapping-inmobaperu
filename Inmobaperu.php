@@ -30,6 +30,7 @@
 
     $currency = $mongo->babilonia->currency;
     $listings = $mongo->babilonia->listings;
+    $users_packages = $mongo->babilonia->users_packages;
 
     $cursor_currency = $currency->find(
         array(
