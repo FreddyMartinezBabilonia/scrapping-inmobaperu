@@ -1,3 +1,5 @@
 /vendor
 access.log
 error.log
+sftp.json
+.vscode
