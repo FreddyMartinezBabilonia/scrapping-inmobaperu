@@ -479,8 +479,7 @@
             ##########################################################################################
             $array_external_listing_id_already_exist = array();
 
-            $result_create = array_diff($array_provider, $array_babilonia);
-            #$result_create = array("https://gamainmobiliaria.pe/listing/alquilo-departamento-amoblado-y-equipado-3dorm-84mts-calle-colon-537-miraflores/");
+            $result_create = array_diff($array_provider, $array_babilonia);            
             $counter_create = count($result_create);
             $c_create = $counter_create;
 
