@@ -44,7 +44,7 @@ Class InmobaperuInmueble {
     private $latitude = null;
 
     private $status = null;
-    private $role = "publisher_role";
+    private $role = "realtor";
     private $id_listing_external = null;
     private $id_realtor = null;
     private $link = null;
@@ -76,24 +76,10 @@ Class InmobaperuInmueble {
         $listing = $client->request('GET', $link);
         $response = $client->getResponse();
         $statusCode = $response->getStatusCode();
-        
-        if ($statusCode !== 200) {
-            $this->is_ok = false;
-            $this->status = "hidden";
-            $this->entire_website = "Error: Unable to fetch the listing. Status code: " . $statusCode;
-            return;
-        }
 
         $this->entire_website = $listing->html();
 
         $body = $listing->filter("body");
-
-        if ($body->count() == 0) {
-            $this->is_ok = false;
-            $this->status = "hidden";
-            $this->entire_website = "Error: No content found in the body.";
-            return;
-        }
 
         $title = $body
                 ->filter(".attribute-title-box")
@@ -201,6 +187,9 @@ Class InmobaperuInmueble {
                     ->filter(".attribute-box-columns:nth-child(4)");
 
         foreach([$attr1, $attr2, $attr3, $attr4] as $node){
+            if($node->filter(".attribute-value")->count() == 0 || $node->filter(".attribute-name")->count() == 0){
+                continue;
+            }
             $name = strtolower($node->filter(".attribute-name")->text());
             $value = strtolower($node->filter(".attribute-value")->text());
             
@@ -228,16 +217,26 @@ Class InmobaperuInmueble {
         $this->area = $area;
         $this->parking_slots_count = $parking_slots_count;
 
-        $year_of_construction = $body
-                    ->filter(".site-content")
-                    ->filter("div:nth-child(4)")
-                    ->filter(".container")
-                    ->filter(".stm-row")
-                    ->filter(".stm-col:nth-child(1)")
-                    ->filter(".attribute-box")
-                    ->filter(".attribute-value")
-                    ->text();
-        $year_of_construction = !empty($year_of_construction) && strtolower($year_of_construction) != "n/a" ? $year_of_construction : null;
+        if($body
+            ->filter(".site-content")
+            ->filter("div:nth-child(4)")
+            ->filter(".container")
+            ->filter(".stm-row")
+            ->filter(".stm-col:nth-child(1)")
+            ->filter(".attribute-box")
+            ->filter(".attribute-value")
+            ->count()){
+                $year_of_construction = $body
+                            ->filter(".site-content")
+                            ->filter("div:nth-child(4)")
+                            ->filter(".container")
+                            ->filter(".stm-row")
+                            ->filter(".stm-col:nth-child(1)")
+                            ->filter(".attribute-box")
+                            ->filter(".attribute-value")
+                            ->text();
+                $year_of_construction = !empty($year_of_construction) && strtolower($year_of_construction) != "n/a" ? $year_of_construction : null;
+        }
 
         if (!isset($this->listing_type) OR is_null($this->listing_type)) {
             $this->status = strval("hidden");
