@@ -47,9 +47,8 @@
     foreach ($cursor_currency as $currency) {
         $tc = floatval($currency["currency_value"]);
     }
-
     $user_email = ($MASTER_ENVIRONMENT == "prod" ? strval("GIULIANA.GIANNONI@YAHOO.COM") : strval("julio.lopez@babilonia.io"));
-    $path = "https://gamainmobiliaria.pe";
+    $path = "https://inmobaperu.com";
     $path_data_website = __DIR__ . "/scraping_" . date("Ymd") . ".log";
 
     function get_string_between($string, $start, $end){
@@ -239,8 +238,7 @@
     }
     
     $array_provider = array_unique($array_provider);
-    print_r($array_provider);
-    exit();
+
     ##########################################################################################
     #GETTING BABILONIA DATA
     ##########################################################################################
