@@ -84,13 +84,18 @@ Class InmobaperuInmueble {
         $title = $body
                 ->filter(".attribute-title-box")
                 ->text();    
-        $body
+        $imagesList = $body
             ->filter(".listing-gallery-thumbnail-box")
-            ->filter("a")
-            ->each(function($node) use(&$array_images) {                        
-                array_push($array_images, $node->attr("href"));                
-            });
-        
+            ->filter(".item")
+            ->filter("a");
+            
+        if($imagesList->count() > 0){
+            foreach($imagesList as $node){
+                array_push($array_images, $node->getAttribute("href"));
+                unset($node);
+            }
+        }                
+
         $this->array_images = $array_imagenes;
 
         $listing_type = $body
