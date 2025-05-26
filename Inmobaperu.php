@@ -48,7 +48,7 @@
     foreach ($cursor_currency as $currency) {
         $tc = floatval($currency["currency_value"]);
     }
-    $user_email = ($MASTER_ENVIRONMENT == "prod" ? strval("GIULIANA.GIANNONI@YAHOO.COM") : strval("julio.lopez@babilonia.io"));
+    $user_email = ($MASTER_ENVIRONMENT == "prod" ? strval("GIULIANA.GIANNONI@YAHOO.COM") : strval("julio.lopez@babilonia.pe"));
     $path = "https://inmobaperu.com";
     $path_data_website = __DIR__ . "/scraping_" . date("Ymd") . ".log";
 
@@ -134,6 +134,11 @@
     
 
     $client = new HttpBrowser(HttpClient::create(['timeout' => 180]));
+    $result_create = array();
+    $result_update = array();
+    $result_delete = array();
+
+
 
     $array_provider = array();
     $array_babilonia = array();
@@ -150,7 +155,24 @@
 
     ### script para obtener datos de un aviso
 
+    // $inmueble = new InmobaperuInmueble("https://inmobaperu.com/listing/alquiler-de-edificio-en-magdalena-del-mar/");
+    // return;
+    ##########################################################################################
+    #GETTING BABILONIA DATA
+    ##########################################################################################
+    $select_listings_babilonia = $listings->find(
+        array('$and' => array(
+            array('user_id' => intval($user_id)),
+            array('external_data.id' => array('$ne' => null)),
+            array('source' => strval('integration')),
+        ))
+    );
+    foreach ($select_listings_babilonia as $babilonia) {
+        array_push($array_babilonia, strtolower($babilonia["external_data"]["url"]));
+    }
+    
     $views = array("departamentos", "casas-2", "oficinas", "local-comercial", "terrenos");
+    #$views = array("local-comercial");
 
     foreach($views as $view){
         
@@ -208,13 +230,15 @@
         
                     $data = json_decode($response, true);
                     $slug = str_replace($path . "/listing/", "", $link);
-                    if((!isset($data["data"]["status"]) || $data["data"]["status"]!=404) && $slug !=""){
+                    if((!isset($data["data"]["status"]) || $data["data"]["status"]!=404) && $slug !="" && preg_match('/^[a-zA-Z0-9\-_]+(\/)?$/', $slug)){
                         $_status = strval($data["status"] ?? 'unpublish');
                         
                         if($_status == 'publish'){
                             array_push($array_provider, strval($link));
-                            echo "url agregada: " . $link . "\n";
+                            echo "✅ url agregada: " . $link . "\n";
                         }
+                    }else{
+                        echo "❌ la url no es valida: " . $slug . "\n";
                     }
         
                         unset($_status);
@@ -231,119 +255,22 @@
                 });
                 unset($listing);
             }
-        }
 
+            // if($page > 1) break;
+        }
+        
         unset($browser);
         unset($script);
         unset($response);
         unset($total_pages);
-    }
-    
-    $array_provider = array_unique($array_provider);
-
-    ##########################################################################################
-    #GETTING BABILONIA DATA
-    ##########################################################################################
-    $select_listings_babilonia = $listings->find(
-        array('$and' => array(
-            array('user_id' => intval($user_id)),
-            array('external_data.id' => array('$ne' => null)),
-            array('source' => strval('integration')),
-        ))
-    );
-    foreach ($select_listings_babilonia as $babilonia) {
-        array_push($array_babilonia, strtolower($babilonia["external_data"]["url"]));
-    }
-    
-    $views = array("departamentos", "casas-2", "oficinas", "local-comercial", "terrenos");
-
-    foreach($views as $view){
         
-        ##########################################################################################
-        #EXTRAER PAGINA MAX POR VISTA DE PROPIEDAD VISITADA
-        ##########################################################################################
-        $browser = $client->request('GET', $path . "/$view/");
-        $script = $browser->filter('script#stm-search-form-advanced-js-before')->text();
-        $response = str_replace("/* <![CDATA[ */ var stm_listing_pagination_data = json_parse('", "", $script);
-        $response = str_replace("') /* ]]> */", "", $response);
-        $response = str_replace("\\\"", "\"", $response); 
-        $response = json_decode($response, true);
-        $total_pages = $response["total_pages"] ?? 1;
-        
-        ##########################################################################################
-        #GETTING PROVIDER DATA
-        ##########################################################################################
-        for ($page = 1; $page <= $total_pages; $page++) {
-            if ($page == 1) {
-                $listing = $client->request('GET', $path . "/$view/");
-            }
-            else {
-                $listing = $client->request('GET', $path . "/$view/?current_page=" . $page );
-            }
-            
-            if (
-                $listing
-                    ->filter(".ulisting-item-grid")
-                    ->count() == 0
-            ) {
-                unset($listing);
-                continue;
-            }
-            else {
-        
-            $listing
-                ->filter("body")
-                ->filter(".ulisting-item-grid")
-                ->filter(".inventory-thumbnail-box")
-                ->each(function($node) use(&$array_provider, $path){
-        
-                if ($node->attr('href') <> "javascript:void(0)") {
-                    $link = $node->filter("a");
-                    $link = $link->attr('href');
-                    $id = $node->attr('data-id');
-                    
-                    try {                                                        
-                    $url =  $path . "/wp-json/wp/v2/listing/" . $id;
-                    $curl = curl_init();
-                    curl_setopt($curl, CURLOPT_URL, $url);
-                    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($curl, CURLOPT_HEADER, false);
-                    $response = curl_exec($curl);
-                    curl_close($curl);
-        
-                    $data = json_decode($response, true);
-        
-                    if(!isset($data["data"]["status"]) || $data["data"]["status"]!=404){
-                        $_status = strval($data["status"] ?? 'unpublish');
-                        
-                        if($_status == 'publish'){
-                            array_push($array_provider, strval($link));
-                        }
-                    }
-        
-                        unset($_status);
-                        unset($url);
-                        unset($curl);
-                        unset($response);
-                        unset($data);
-                    } catch (Exception $e) {
-                        print_r($e->getMessage());
-                    }
-                    unset($link);
-                    unset($id);
-                }
-                });
-                unset($listing);
-            }
-        }
-
-        unset($browser);
-        unset($script);
-        unset($response);
-        unset($total_pages);
     }
 
     $array_provider = array_unique($array_provider);
+
+    // print_r($array_provider);
+    // echo "\n\n";
+    echo "cantidad de avisos encontrados: " . count($array_provider) . "\n\n";
 
     if (count($array_provider) >= 1) {
 
@@ -419,7 +346,7 @@
                     else {
                         $answer_delete_ok = json_decode($answer_delete_ok);
 
-                        if ($answer_delete_ok->data->status) {
+                        if (isset($answer_delete_ok->data->status) && !empty($answer_delete_ok->data->status)) {
                             if ($answer_delete_ok->data->status == "ok") {
                                 echo json_encode($answer_delete_ok) . "\n";
                                 echo date("Y-m-d H:i:s") . "\n";
@@ -484,6 +411,9 @@
             $c_create = $counter_create;
 
             sort($result_create);
+
+            echo "Avisos a crear: " . count($result_create) . "\n\n";        
+            echo "\n\n";
 
             if (count($result_create) >= 1) {
                 foreach ($result_create as $link) {
@@ -654,6 +584,9 @@
 
             sort($result_update);
 
+            echo "cantidad de avisos a actualizar: " . count($result_update) . "\n\n";
+            echo "\n\n";
+
             if (count($result_update) >= 1) {
                 foreach ($result_update as $link) {
                     echo $link . "\n";
@@ -661,7 +594,7 @@
                     $inmueble = new InmobaperuInmueble($link);
                     $entire_website = $inmueble->getEntireWebsite();
 
-                    file_put_contents($path_data_website, $link . " - " . date("Y-m-d\TH:i:s\Z") . "\n" . $entire_website . "\n\n\n", FILE_APPEND | LOCK_EX);                    
+                    file_put_contents($path_data_website, $link . " - " . date("Y-m-d\TH:i:s\Z") . "\n" . $entire_website . "\n\n\n", FILE_APPEND | LOCK_EX);
 
                     ##########################################################################################
                     #UPDATING LISTING
