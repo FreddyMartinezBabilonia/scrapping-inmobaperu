@@ -240,13 +240,8 @@ Class InmobaperuInmueble {
         else if (count($this->array_images) <= 0) {
             $this->status = strval("hidden");
         }
-        else if (!isset($this->longitude) AND !isset($this->latitude)) {
-            if (!isset($this->district) OR !isset($this->province) OR !isset($this->department)) {
-                $this->status = strval("hidden");
-            }
-            else {
-                $this->status = strval("visible");
-            }
+        if (empty($this->district) OR empty($this->province) OR empty($this->department)) {
+            $this->status = strval("hidden");
         }
         else {
             $this->status = strval("visible");
