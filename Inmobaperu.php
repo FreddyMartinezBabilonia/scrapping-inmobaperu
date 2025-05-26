@@ -213,6 +213,7 @@
                         
                         if($_status == 'publish'){
                             array_push($array_provider, strval($link));
+                            echo "url agregada: " . $link . "\n";
                         }
                     }
         
