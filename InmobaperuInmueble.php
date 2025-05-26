@@ -96,7 +96,7 @@ Class InmobaperuInmueble {
             }
         }                
 
-        $this->array_images = $array_imagenes;
+        $this->array_images = $array_images;
 
         $listing_type = $body
                 ->filter(".listing-single-info")
