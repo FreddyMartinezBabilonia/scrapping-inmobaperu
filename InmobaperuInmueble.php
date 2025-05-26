@@ -49,6 +49,8 @@ Class InmobaperuInmueble {
     private $id_realtor = null;
     private $link = null;
 
+    private $is_ok = true;
+
     private $array_contacts = array();
 
 
@@ -71,12 +73,27 @@ Class InmobaperuInmueble {
         $array_imagenes = array();
 
         $client = new HttpBrowser(HttpClient::create(['timeout' => 180]));
-
         $listing = $client->request('GET', $link);
+        $response = $client->getResponse();
+        $statusCode = $response->getStatusCode();
+        
+        if ($statusCode !== 200) {
+            $this->is_ok = false;
+            $this->status = "hidden";
+            $this->entire_website = "Error: Unable to fetch the listing. Status code: " . $statusCode;
+            return;
+        }
 
         $this->entire_website = $listing->html();
 
         $body = $listing->filter("body");
+
+        if ($body->count() == 0) {
+            $this->is_ok = false;
+            $this->status = "hidden";
+            $this->entire_website = "Error: No content found in the body.";
+            return;
+        }
 
         $title = $body
                 ->filter(".attribute-title-box")
@@ -396,6 +413,9 @@ Class InmobaperuInmueble {
         return $this->url;
     }
     
+    public function getOk(){
+        return $this->is_ok;
+    }
 
     public function cleanPropertyType ($property_type = null) {
 
