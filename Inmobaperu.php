@@ -13,7 +13,7 @@
     $time_start = microtime(true);
     $date_start = date("Y-m-d H:i:s");
     echo $date_start . "\n";
-    /*
+    
     $config = parse_ini_file("/var/www/resources/env-babilonia.sh", true);
     extract($config);
 
@@ -131,7 +131,7 @@
     }
 
     echo $user_id . " - " . $authorization . "\n\n";
-    */
+    
 
     $client = new HttpBrowser(HttpClient::create(['timeout' => 180]));
 
