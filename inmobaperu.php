@@ -466,15 +466,15 @@
 
                     $message_create->contacts = $inmueble->getContacts();
 
-                    $message_create->location_attributes = new stdClass();
-                    $message_create->location_attributes->country = $inmueble->getCountry();
-                    $message_create->location_attributes->department = $inmueble->getDepartment();
-                    $message_create->location_attributes->province = $inmueble->getProvince();
-                    $message_create->location_attributes->district = $inmueble->getDistrict();
-                    $message_create->location_attributes->address = $inmueble->getAddress();
-                    $message_create->location_attributes->address_alternative = $inmueble->getAddressAlternative();
-                    $message_create->location_attributes->latitude = $inmueble->getLatitude();
-                    $message_create->location_attributes->longitude = $inmueble->getLongitude();
+                    // $message_create->location_attributes = new stdClass();
+                    // $message_create->location_attributes->country = $inmueble->getCountry();
+                    // $message_create->location_attributes->department = $inmueble->getDepartment();
+                    // $message_create->location_attributes->province = $inmueble->getProvince();
+                    // $message_create->location_attributes->district = $inmueble->getDistrict();
+                    // $message_create->location_attributes->address = $inmueble->getAddress();
+                    // $message_create->location_attributes->address_alternative = $inmueble->getAddressAlternative();
+                    // $message_create->location_attributes->latitude = $inmueble->getLatitude();
+                    // $message_create->location_attributes->longitude = $inmueble->getLongitude();
 
                     $message_create->image_ids = $inmueble->getImageIds();
 
@@ -528,8 +528,8 @@
                     }
                     else {
                         $answer_create_ok = json_decode($answer_create_ok);
-
-                        if ($answer_create_ok->data->status) {
+                        
+                        if (isset($answer_create_ok->data->status) && !empty($answer_create_ok->data->status)) {
                             if ($answer_create_ok->data->status == "ok") {
                                 echo json_encode($answer_create_ok) . "\n";
                                 echo date("Y-m-d H:i:s") . "\n";
@@ -638,15 +638,15 @@
 
                     $message_update->contacts = $inmueble->getContacts();
 
-                    $message_update->location_attributes = new stdClass();
-                    $message_update->location_attributes->country = $inmueble->getCountry();
-                    $message_update->location_attributes->department = $inmueble->getDepartment();
-                    $message_update->location_attributes->province = $inmueble->getProvince();
-                    $message_update->location_attributes->district = $inmueble->getDistrict();
-                    $message_update->location_attributes->address = $inmueble->getAddress();
-                    $message_update->location_attributes->address_alternative = $inmueble->getAddressAlternative();
-                    $message_update->location_attributes->latitude = $inmueble->getLatitude();
-                    $message_update->location_attributes->longitude = $inmueble->getLongitude();
+                    // $message_update->location_attributes = new stdClass();
+                    // $message_update->location_attributes->country = $inmueble->getCountry();
+                    // $message_update->location_attributes->department = $inmueble->getDepartment();
+                    // $message_update->location_attributes->province = $inmueble->getProvince();
+                    // $message_update->location_attributes->district = $inmueble->getDistrict();
+                    // $message_update->location_attributes->address = $inmueble->getAddress();
+                    // $message_update->location_attributes->address_alternative = $inmueble->getAddressAlternative();
+                    // $message_update->location_attributes->latitude = $inmueble->getLatitude();
+                    // $message_update->location_attributes->longitude = $inmueble->getLongitude();
 
                     $message_update->image_ids = $inmueble->getImageIds();
 
@@ -704,7 +704,7 @@
                     else {
                         $answer_update_ok = json_decode($answer_update_ok);
 
-                        if ($answer_update_ok->data->status) {
+                        if (isset($answer_update_ok->data->status) && !empty($answer_update_ok->data->status)) {
                             if ($answer_update_ok->data->status == "ok") {
                                 echo json_encode($answer_update_ok) . "\n";
                                 echo date("Y-m-d H:i:s") . "\n";
