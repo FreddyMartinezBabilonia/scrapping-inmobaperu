@@ -164,7 +164,7 @@ Class InmobaperuInmueble {
                 ->filter(".genuine_sale")
                 ->text();
 
-            $this->price = str_replace(array(",", ".","$"), array("", "", ""), $price);
+            $this->price = str_replace(array(",", ".","$", " ","x", "m2"), array("", "", "", "", "", ""), strtolower($price));
         }
 
 
